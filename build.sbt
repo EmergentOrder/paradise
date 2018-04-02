@@ -1,16 +1,18 @@
 // NOTE: much of this build is copy/pasted from scalameta/scalameta
 import java.io._
+
 import scala.util.Try
 import scala.xml.{Node => XmlNode, NodeSeq => XmlNodeSeq, _}
 import scala.xml.transform.{RewriteRule, RuleTransformer}
 import org.scalameta.os
+import sbt.{Credentials, Path}
 
 lazy val Scala211 = "2.11.12"
-lazy val Scala212 = "2.12.4"
+lazy val Scala212 = "2.12.5"
 lazy val LanguageVersions = Seq(Scala211, Scala212)
 lazy val MetaVersion = "1.8.0"
 lazy val LanguageVersion = LanguageVersions.last
-version.in(ThisBuild) ~= (_.replace('+', '-'))
+version.in(ThisBuild) := "3.0.0-M11"
 onLoadMessage := s"Welcome to scalameta/paradise ${version.value}"
 
 // ==========================================
@@ -171,37 +173,15 @@ lazy val usePluginSettings = Seq(
 
 lazy val publishableSettings = Def.settings(
   sharedSettings,
-  publishTo := {
-    if (sys.props("scalameta.publish") == "sonatype")
-      Some("releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
+  publishTo :=  {
+    val nexus = "http://nexus.tcsbank.ru/"
+    if (isSnapshot.value)
+      Some("snapshots" at nexus + "content/repositories/tcs-snapshot")
     else
-      publishTo.in(bintray).value
+      Some("releases" at nexus + "content/repositories/tcs")
   },
-  bintrayOrganization := Some("scalameta"),
   publishArtifact.in(Compile) := true,
-  publishArtifact.in(Test) := false, {
-    val publishingEnabled: Boolean = {
-      if (!new File(sys.props("user.home") + "/.bintray/.credentials").exists) false
-      else if (sys.props("sbt.prohibit.publish") != null) false
-      else if (sys.env.contains("CI_PULL_REQUEST")) false
-      else true
-    }
-    if (sys.props("disable.publish.status") == null) {
-      sys.props("disable.publish.status") = ""
-      val publishingStatus = if (publishingEnabled) "enabled" else "disabled"
-    }
-    publish.in(Compile) := {
-      if (publishingEnabled) {
-        Def.task {
-          publish.value
-        }
-      } else {
-        Def.task {
-          sys.error("Undefined publishing strategy"); ()
-        }
-      }
-    }
-  },
+  publishArtifact.in(Test) := false,
   publishMavenStyle := true,
   pomIncludeRepository := { x =>
     false
@@ -220,9 +200,8 @@ lazy val publishableSettings = Def.settings(
     </issueManagement>
     <developers>
       <developer>
-        <id>xeno-by</id>
-        <name>Eugene Burmako</name>
-        <url>http://xeno.by</url>
+        <id>odomontois</id>
+        <name>Oleg Nizhnik</name>
       </developer>
     </developers>
   )
@@ -279,11 +258,6 @@ def exposePaths(projectName: String, config: Configuration) = {
 
 inScope(Global)(
   Seq(
-    credentials ++= (for {
-      username <- sys.env.get("SONATYPE_USERNAME")
-      password <- sys.env.get("SONATYPE_PASSWORD")
-    } yield
-      Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq,
-    PgpKeys.pgpPassphrase := sys.env.get("PGP_PASSPHRASE").map(_.toCharArray())
+    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
   )
 )
