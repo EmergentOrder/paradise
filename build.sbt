@@ -8,7 +8,7 @@ import org.scalameta.os
 import sbt.{Credentials, Path}
 
 lazy val Scala211 = "2.11.12"
-lazy val Scala212 = "2.12.6"
+lazy val Scala212 = "2.12.7"
 lazy val LanguageVersions = Seq(Scala211, Scala212)
 lazy val MetaVersion = "1.8.0"
 lazy val LanguageVersion = LanguageVersions.last
@@ -121,6 +121,7 @@ lazy val sharedSettings = Def.settings(
   crossVersion := CrossVersion.binary,
   organization := "org.scalameta",
   resolvers += Resolver.sonatypeRepo("snapshots"),
+  resolvers += "Sonatype OSS Staging" at "https://oss.sonatype.org/content/repositories/staging/",
   resolvers += Resolver.bintrayRepo("scalameta", "maven"),
   resolvers += Resolver.sonatypeRepo("releases"),
   libraryDependencies += "org.scalameta" %% "scalameta" % MetaVersion,
